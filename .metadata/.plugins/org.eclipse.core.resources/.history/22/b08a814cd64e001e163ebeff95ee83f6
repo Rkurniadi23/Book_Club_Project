@@ -1,0 +1,153 @@
+package com.rkproject.bookclub.controllers;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.rkproject.bookclub.models.Book;
+import com.rkproject.bookclub.models.User;
+import com.rkproject.bookclub.models.UserLogin;
+import com.rkproject.bookclub.services.BookService;
+import com.rkproject.bookclub.services.UserService;
+
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+
+@Controller
+public class MainController {
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private BookService bookService;
+	
+	// Login and Registration Page
+	@GetMapping("/")
+    public String index(Model model) {
+    
+        model.addAttribute("newUser", new User());
+        model.addAttribute("newLogin", new UserLogin());
+        return "index.jsp";
+    }
+	
+	@PostMapping("/register")
+    public String register(@Valid @ModelAttribute("newUser") User newUser, 
+            BindingResult result, Model model, HttpSession session) {
+        
+    	User user = userService.createUser(newUser, result);
+        
+        if(result.hasErrors()) {
+            
+            model.addAttribute("newLogin", new UserLogin());
+            return "index.jsp";
+        }
+        
+        session.setAttribute("userId", user.getId());
+        return "redirect:/home";
+    }
+    
+    @PostMapping("/login")
+    public String login(@Valid @ModelAttribute("newLogin") UserLogin newLogin, 
+            BindingResult result, Model model, HttpSession session) {
+        
+    	User user = userService.login(newLogin, result);
+    
+        if(result.hasErrors()) {
+            model.addAttribute("newUser", new User());
+            return "index.jsp";
+        }
+    
+        session.setAttribute("userId", user.getId());
+        return "redirect:/home";
+    }
+    
+    // Dashboard
+    @GetMapping("/dashboard")
+	public String dashboard(@ModelAttribute("book") Book book, HttpSession session, Model model) {
+	 
+		if(session.getAttribute("userId") == null) {
+			return "redirect:/logout";
+		}
+		Long userId = (Long) session.getAttribute("userId");
+		User user = userService.findById(userId);
+		
+		model.addAttribute("userId", userId);
+		model.addAttribute("user", user);
+		model.addAttribute("favoritBooks", bookService.getFavoritBooks(user));
+		model.addAttribute("notFavoritBooks", bookService.getNotFavoritBooks(user));
+		 
+		return "dashboard.jsp";
+	}
+	
+    @PostMapping("/books/new")
+	public String addNewBook(@Valid @ModelAttribute("book") Book book, BindingResult result, HttpSession session) {
+		
+		if(session.getAttribute("userId") == null) {
+			return "redirect:/logout";
+		}
+		
+		if(result.hasErrors()) {
+			return "dashboard.jsp";
+		}else {
+			
+			bookService.addBook(book);
+			
+			Long userId = (Long) session.getAttribute("userId");
+			User user = userService.findById(userId);
+			user.getBooks().add(book);
+			userService.updateUser(user);
+			return "redirect:/dashboard";
+		}
+	}
+    
+	@RequestMapping("/dashboard/favorit/{id}")
+	public String favoritBooks(@PathVariable("id") Long id, HttpSession session, Model model) {
+		
+		if(session.getAttribute("userId") == null) {
+			return "redirect:/logout";
+		}
+		Long userId = (Long) session.getAttribute("userId");
+		
+		Book book = bookService.findById(id);
+		User user = userService.findById(userId);
+		
+		user.getBooks().add(book);
+		userService.updateUser(user);
+		
+		model.addAttribute("user", user);
+		model.addAttribute("favoritBooks", bookService.getFavoritBooks(user));
+		model.addAttribute("notFavoritBooks", bookService.getNotFavoritBooks(user));
+		
+		return "redirect:/dashboard";
+	}
+	
+	@RequestMapping("/dashboard/notfavorit/{id}")
+	public String notFavoritBook(@PathVariable("id") Long id, HttpSession session, Model model) {
+		
+		if(session.getAttribute("userId") == null) {
+			return "redirect:/logout";
+		}
+		Long userId = (Long) session.getAttribute("userId");
+		
+		Book book = bookService.findById(id);
+		User user = userService.findById(userId);
+		
+		user.getBooks().remove(book);
+		userService.updateUser(user);
+		
+		model.addAttribute("user", user);
+		model.addAttribute("favoritBooks", bookService.getFavoritBooks(user));
+		model.addAttribute("notFavoritBooks", bookService.getNotFavoritBooks(user));
+		
+		return "redirect:/dashboard";
+	}
+	
+	
+
+}

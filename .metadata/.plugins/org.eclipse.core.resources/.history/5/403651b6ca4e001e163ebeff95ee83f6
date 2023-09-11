@@ -1,0 +1,5 @@
+package com.rkproject.bookclub.services;
+
+public class UserService {
+
+}

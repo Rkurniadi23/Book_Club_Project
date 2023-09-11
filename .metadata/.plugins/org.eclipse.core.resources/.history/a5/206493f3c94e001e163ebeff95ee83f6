@@ -1,0 +1,5 @@
+package com.rkproject.bookclub.repositories;
+
+public interface BookRepository {
+
+}

@@ -1,0 +1,5 @@
+package com.rkproject.bookclub.controllers;
+
+public class MainController {
+
+}

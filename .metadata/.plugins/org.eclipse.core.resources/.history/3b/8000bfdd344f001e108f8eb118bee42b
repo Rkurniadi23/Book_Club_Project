@@ -1,0 +1,66 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@ taglib prefix = "c" uri = "http://java.sun.com/jsp/jstl/core" %>
+
+<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"  %>
+
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
+
+<%@ page isErrorPage="true" %>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Dashboard</title>
+</head>
+<body>
+	<h1>Welcome, <c:out value="${user.firstName}"/>!</h1>
+	<div>
+		<a href="/logout">log out</a>
+	</div>
+	<div>
+		<h1>Add A New Book</h1>
+		<form:form action="/books/new" method="post" modelAttribute="book">
+		<table>
+		    <thead>
+		    	<tr>
+		            <td class="float-left">Title:</td>
+		            <td class="float-left">
+		            	<form:errors path="title" class="text-danger"/>
+						<form:input class="input" path="title"/>
+		            </td>
+		        </tr>
+		        <tr>
+		            <td class="float-left">Description:</td>
+		            <td class="float-left">
+		            	<form:errors path="description" class="text-danger"/>
+						<form:input class="input" path="description"/>
+		            </td>
+		        </tr>	
+				<tr>
+		        	<td colspan=2><input class="input" type="submit" value="Submit"/></td>
+		        </tr>
+		    </thead>
+		</table>
+		</form:form>
+	</div>
+	<div>
+		<h1>All Books</h1>
+		<c:forEach var="book" items="${favoritBooks}">
+		`	<c:if test = "${project.admin.id=user.id}">
+			<a href="/books/${book.id}"><c:out value="${book.title}"/></a>
+			<p>(added by <c:out value="${book.admin.firstName}"></c:out>)</p>
+			<p>this is one of your favorites</p>
+			</c:if>
+		</c:forEach>
+		<c:forEach var="book" items="${notFavoritBooks}">
+			<c:if test = "${project.admin.id=user.id}">
+			<a href="/books/${book.id}"><c:out value="${book.title}"/></a>
+			<p>(added by <c:out value="${book.admin.firstName}"></c:out>)</p>
+			<a href="/books/favorit/${book.id}">Add to Favorites</a>
+			</c:if>
+		</c:forEach>
+		    	
+	</div>
+</body>
+</html>
